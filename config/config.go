@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 
+	"github.com/KKGo-Software-engineering/assessment-tax/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,11 +16,17 @@ func ConnectDB() {
 		panic("DATABASE_URL environment variable not set")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect to database")
 	}
 
 	// Migrate the schema
-	db.AutoMigrate()
+	DB.AutoMigrate(&models.TaxCalculation{}, &models.Allowance{}, &models.AdminSetting{})
+
+	db = DB
+}
+
+func GetDB() *gorm.DB {
+	return db
 }
