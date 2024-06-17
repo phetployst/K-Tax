@@ -21,7 +21,6 @@ func ConnectDB() {
 		panic("failed to connect to database")
 	}
 
-	// Migrate the schema
 	DB.AutoMigrate(&models.TaxCalculation{}, &models.Allowance{}, &models.AdminSetting{})
 
 	db = DB

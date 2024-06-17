@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
 	"github.com/KKGo-Software-engineering/assessment-tax/config"
@@ -14,10 +13,9 @@ func main() {
 
 	config.ConnectDB()
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Go Bootcamp!")
-	})
 	e.POST("/tax/calculations", handlers.CalculateTax)
+	e.POST("/admin/deductions/personal", handlers.SetPersonalDeduction)
+	e.POST("/admin/deductions/k-receipt", handlers.SetKReceiptDeduction)
 
 	port, exists := os.LookupEnv("PORT")
 	if !exists {

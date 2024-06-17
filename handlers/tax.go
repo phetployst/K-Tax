@@ -47,7 +47,7 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 				allowances[i].Amount = 50000
 			}
 		case "personal":
-			if allowance.Amount < 10000 {
+			if allowance.Amount < 60000 {
 				allowances[i].Amount = 0
 			}
 		case "":
@@ -87,4 +87,56 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 	}
 
 	return finalTax, taxRefund
+}
+
+var data struct {
+	Amount float64 `json:"amount"`
+}
+
+func SetPersonalDeduction(c echo.Context) error {
+
+	var setting models.AdminSetting
+	var db = config.GetDB()
+
+	if err := c.Bind(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cannot parse json"})
+	}
+
+	if data.Amount < 10000 || data.Amount > 100000 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid amount"})
+	}
+
+	db.FirstOrCreate(&setting)
+	setting.PersonalDeduction = data.Amount
+
+	if err := db.Save(&setting).Error; err != nil {
+		log.Printf("Error saving to database: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save personal deduction"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]float64{"personalDeduction": setting.PersonalDeduction})
+}
+
+func SetKReceiptDeduction(c echo.Context) error {
+
+	var setting models.AdminSetting
+	var db = config.GetDB()
+
+	if err := c.Bind(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "cannot parse json"})
+	}
+
+	if data.Amount < 0 || data.Amount > 100000 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid amount"})
+	}
+
+	db.FirstOrCreate(&setting)
+	setting.KReceiptDeduction = data.Amount
+
+	if err := db.Save(&setting).Error; err != nil {
+		log.Printf("Error saving to database: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save KReceipt deduction"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]float64{"KReceipt": setting.KReceiptDeduction})
 }
