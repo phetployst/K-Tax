@@ -8,6 +8,7 @@ import (
 	"github.com/KKGo-Software-engineering/assessment-tax/config"
 	"github.com/KKGo-Software-engineering/assessment-tax/models"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 func CalculateTax(c echo.Context) error {
@@ -35,7 +36,23 @@ func CalculateTax(c echo.Context) error {
 	}
 }
 
+func getAdminDeduction(db *gorm.DB) (models.AdminSetting, error) {
+	var deduction models.AdminSetting
+	err := db.Order("created_at desc").First(&deduction).Error
+	if err != nil {
+		return deduction, err
+	}
+	return deduction, nil
+}
+
 func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Allowance) (float64, float64) {
+	var db = config.GetDB()
+	deductions, err := getAdminDeduction(db)
+	if err != nil {
+		fmt.Printf("Error fetching admin deductions: %v\n", err)
+		return 0, 0
+	}
+
 	for i, allowance := range allowances {
 		switch allowance.AllowanceType {
 		case "donation":
@@ -43,11 +60,15 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 				allowances[i].Amount = 100000
 			}
 		case "k-receipt":
-			if allowance.Amount > 50000 {
+			if allowance.Amount > deductions.KReceiptDeduction {
+				allowances[i].Amount = deductions.KReceiptDeduction
+			} else if allowance.Amount > 50000 {
 				allowances[i].Amount = 50000
 			}
 		case "personal":
-			if allowance.Amount < 60000 {
+			if allowance.Amount > deductions.PersonalDeduction {
+				allowances[i].Amount = deductions.PersonalDeduction
+			} else if allowance.Amount < 60000 {
 				allowances[i].Amount = 0
 			}
 		case "":
