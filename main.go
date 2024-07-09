@@ -17,8 +17,8 @@ func main() {
 	e.POST("/tax/calculations", handlers.CalculateTax)
 
 	admin := e.Group("/admin", middleware.BasicAuth)
-	admin.POST("/admin/deductions/personal", handlers.SetPersonalDeduction)
-	admin.POST("/admin/deductions/k-receipt", handlers.SetKReceiptDeduction)
+	admin.POST("/deductions/personal", handlers.SetPersonalDeduction)
+	admin.POST("/deductions/k-receipt", handlers.SetKReceiptDeduction)
 
 	port, exists := os.LookupEnv("PORT")
 	if !exists {
