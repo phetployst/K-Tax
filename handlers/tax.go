@@ -36,6 +36,27 @@ func CalculateTax(c echo.Context) error {
 	}
 }
 
+func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Allowance) (float64, float64) {
+
+	totalAllowances := calculateAllowance(allowances)
+	for _, allowance := range allowances {
+		totalAllowances += allowance.Amount
+	}
+
+	taxableIncome := totalIncome - totalAllowances
+
+	tax := calculateProgressiveRate(taxableIncome)
+	finalTax := tax - wht
+
+	var taxRefund float64
+	if finalTax < 0 {
+		taxRefund = -finalTax
+		finalTax = 0
+	}
+
+	return finalTax, taxRefund
+}
+
 func getAdminDeduction(db *gorm.DB) (models.AdminSetting, error) {
 	var deduction models.AdminSetting
 	err := db.Order("created_at desc").First(&deduction).Error
@@ -45,12 +66,12 @@ func getAdminDeduction(db *gorm.DB) (models.AdminSetting, error) {
 	return deduction, nil
 }
 
-func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Allowance) (float64, float64) {
+func calculateAllowance(allowances []models.Allowance) float64 {
 	var db = config.GetDB()
 	deductions, err := getAdminDeduction(db)
 	if err != nil {
 		fmt.Printf("Error fetching admin deductions: %v\n", err)
-		return 0, 0
+		return 0
 	}
 
 	for i, allowance := range allowances {
@@ -83,8 +104,10 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 		totalAllowances += allowance.Amount
 	}
 
-	taxableIncome := totalIncome - totalAllowances
+	return totalAllowances
+}
 
+func calculateProgressiveRate(taxableIncome float64) float64 {
 	var tax float64
 	switch {
 	case taxableIncome <= 150000:
@@ -98,16 +121,7 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 	default:
 		tax = (taxableIncome-2000000)*0.35 + 310000
 	}
-
-	finalTax := tax - wht
-
-	var taxRefund float64
-	if finalTax < 0 {
-		taxRefund = -finalTax
-		finalTax = 0
-	}
-
-	return finalTax, taxRefund
+	return tax
 }
 
 var data struct {
