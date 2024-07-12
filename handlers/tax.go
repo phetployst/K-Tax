@@ -43,18 +43,18 @@ func calculateTaxAmount(totalIncome float64, wht float64, allowances []models.Al
 		totalAllowances += allowance.Amount
 	}
 
-	taxableIncome := totalIncome - totalAllowances
+	netIncome := totalIncome - totalAllowances
 
-	tax := calculateProgressiveRate(taxableIncome)
-	finalTax := tax - wht
+	taxRate := calculateProgressiveRate(netIncome)
+	taxPayable := taxRate - wht
 
 	var taxRefund float64
-	if finalTax < 0 {
-		taxRefund = -finalTax
-		finalTax = 0
+	if taxPayable < 0 {
+		taxRefund = -taxPayable
+		taxPayable = 0
 	}
 
-	return finalTax, taxRefund
+	return taxPayable, taxRefund
 }
 
 func getAdminDeduction(db *gorm.DB) (models.AdminSetting, error) {
@@ -107,21 +107,22 @@ func calculateAllowance(allowances []models.Allowance) float64 {
 	return totalAllowances
 }
 
-func calculateProgressiveRate(taxableIncome float64) float64 {
-	var tax float64
+func calculateProgressiveRate(netIncome float64) float64 {
+	var taxRate float64
 	switch {
-	case taxableIncome <= 150000:
-		tax = 0
-	case taxableIncome <= 500000:
-		tax = (taxableIncome - 150000) * 0.10
-	case taxableIncome <= 1000000:
-		tax = (taxableIncome-500000)*0.15 + 35000
-	case taxableIncome <= 2000000:
-		tax = (taxableIncome-1000000)*0.20 + 110000
+	case netIncome <= 150000.0:
+		taxRate = 0
+	case netIncome <= 500000.0:
+		taxRate = (netIncome - 150000.0) * 0.10
+	case netIncome <= 1000000.0:
+		taxRate = (netIncome-500000.0)*0.15 + 35000
+	case netIncome <= 2000000.0:
+		taxRate = (netIncome-1000000.0)*0.20 + 110000
 	default:
-		tax = (taxableIncome-2000000)*0.35 + 310000
+		taxRate = (netIncome-2000000.0)*0.35 + 310000
 	}
-	return tax
+
+	return taxRate
 }
 
 var data struct {
