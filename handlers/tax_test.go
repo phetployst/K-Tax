@@ -5,7 +5,7 @@ import (
 
 	"github.com/KKGo-Software-engineering/assessment-tax/config"
 	"github.com/KKGo-Software-engineering/assessment-tax/models"
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCalculateProgressiveRate(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCalculateAllowance(t *testing.T) {
 
 		got := calculateAllowance(allowances)
 
-		assert.Equal(t, expected, got)
+		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
 	})
 
 	t.Run("test normal allowances", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestCalculateAllowance(t *testing.T) {
 
 		got := calculateAllowance(allowances)
 
-		assert.Equal(t, expected, got)
+		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
 	})
 
 	t.Run("test normal allowances", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestCalculateAllowance(t *testing.T) {
 
 		got := calculateAllowance(allowances)
 
-		assert.Equal(t, expected, got)
+		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
 	})
 
 	t.Run("non calculate personal allowance with less than 60000", func(t *testing.T) {
@@ -123,7 +123,76 @@ func TestCalculateAllowance(t *testing.T) {
 
 		got := calculateAllowance(allowances)
 
-		assert.Equal(t, expected, got)
+		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
 	})
 
+}
+
+func TestCalculateTaxAmount(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		totalIncome    float64
+		wht            float64
+		allowances     []models.Allowance
+		expectedTax    float64
+		expectedRefund float64
+	}{
+		{
+			name:           "Case 1: Total Income 1000000, WHT 100000, Personal Allowance 60000",
+			totalIncome:    1000000,
+			wht:            0,
+			allowances:     []models.Allowance{{AllowanceType: "personal", Amount: 60000}},
+			expectedTax:    92000,
+			expectedRefund: 0,
+		},
+		{
+			name:           "Case 2: Total Income 2000000, WHT 300000, Donation Allowance 85000",
+			totalIncome:    2000000,
+			wht:            300000,
+			allowances:     []models.Allowance{{AllowanceType: "donation", Amount: 85000}},
+			expectedTax:    0,
+			expectedRefund: 24000,
+		},
+		{
+			name:           "Case 3: Total Income 500000, WHT 70000, K-receipt Allowance 70000",
+			totalIncome:    500000,
+			wht:            9000,
+			allowances:     []models.Allowance{{AllowanceType: "k-receipt", Amount: 70000}},
+			expectedTax:    16000,
+			expectedRefund: 0,
+		},
+		{
+			name:        "Case 4: Total Income 500000, WHT 100000, Multiple Allowances",
+			totalIncome: 500000,
+			wht:         100000,
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 60000},
+				{AllowanceType: "personal", Amount: 8000},
+				{AllowanceType: "k-receipt", Amount: 78000},
+			},
+			expectedTax:    0,
+			expectedRefund: 91000,
+		},
+		{
+			name:        "Case 5: Total Income 500000, WHT 100000, Multiple Allowances",
+			totalIncome: 500000,
+			wht:         100000,
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 20000},
+				{AllowanceType: "personal", Amount: 85000},
+				{AllowanceType: "k-receipt", Amount: 9000},
+			},
+			expectedTax:    0,
+			expectedRefund: 84800,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tax, refund := calculateTaxAmount(test.totalIncome, test.wht, test.allowances)
+			assert.Equal(t, test.expectedTax, tax, "Tax should be equal %f but got %f", test.expectedTax, tax)
+			assert.Equal(t, test.expectedRefund, refund, "Refund should be equal %f but got %f", test.expectedRefund, refund)
+		})
+	}
 }
