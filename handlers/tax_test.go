@@ -3,8 +3,8 @@ package handlers
 import (
 	"testing"
 
-	"github.com/KKGo-Software-engineering/assessment-tax/config"
-	"github.com/KKGo-Software-engineering/assessment-tax/models"
+	"github.com/phetployst/K-Tax/config"
+	"github.com/phetployst/K-Tax/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,96 +36,61 @@ func TestCalculateProgressiveRate(t *testing.T) {
 	}
 }
 
-// func setupTestDB() *gorm.DB {
-// 	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-// 	if err != nil {
-// 		panic(fmt.Sprintf("Failed to open database: %v", err))
-// 	}
-// 	db.AutoMigrate(&models.TaxCalculation{}, &models.Allowance{}, &models.AdminSetting{})
-
-// 	// Insert admin settings
-// 	adminSetting := models.AdminSetting{
-// 		KReceiptDeduction: 50000.0,
-// 		PersonalDeduction: 60000.0,
-// 	}
-// 	db.Create(&adminSetting)
-
-// 	// config.ConnectDB(db) // Set the mock database to the global config
-
-// 	return db
-// }
-
 func TestCalculateAllowance(t *testing.T) {
+	tests := []struct {
+		name       string
+		allowances []models.Allowance
+		expected   float64
+	}{
+		{
+			name: "Case 1: test maximum allowances",
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 120000.0},
+				{AllowanceType: "k-receipt", Amount: 70000.0},
+				{AllowanceType: "personal", Amount: 50000.0},
+				{AllowanceType: "", Amount: 20000.0},
+			},
+			expected: 150000.0,
+		},
+		{
+			name: "Case 2: test normal allowances 1",
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 90000.0},
+				{AllowanceType: "k-receipt", Amount: 40000.0},
+				{AllowanceType: "personal", Amount: 0.0},
+			},
+			expected: 130000.0,
+		},
+		{
+			name: "Case 3: test normal allowances 2",
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 90000.0},
+				{AllowanceType: "k-receipt", Amount: 40000.0},
+				{AllowanceType: "personal", Amount: 70000.0},
+			},
+			expected: 200000.0,
+		},
+		{
+			name: "Case 4: non calculate personal allowance with less than 60000",
+			allowances: []models.Allowance{
+				{AllowanceType: "donation", Amount: 90000.0},
+				{AllowanceType: "k-receipt", Amount: 40000.0},
+				{AllowanceType: "personal", Amount: 50000.0},
+			},
+			expected: 130000.0,
+		},
+	}
 
-	t.Run("test maximum allowances", func(t *testing.T) {
-		// I'll be back to mock DB
-		config.ConnectDB()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// I'll be back to mock DB
+			config.ConnectDB()
 
-		allowances := []models.Allowance{
-			{AllowanceType: "donation", Amount: 120000.0},
-			{AllowanceType: "k-receipt", Amount: 70000.0},
-			{AllowanceType: "personal", Amount: 50000.0},
-			{AllowanceType: "", Amount: 20000.0},
-		}
+			got := calculateAllowance(tt.allowances)
 
-		expected := 100000.0 + 50000.0 + 0.0
-
-		got := calculateAllowance(allowances)
-
-		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
-	})
-
-	t.Run("test normal allowances", func(t *testing.T) {
-		// I'll be back to mock DB
-		config.ConnectDB()
-
-		allowances := []models.Allowance{
-			{AllowanceType: "donation", Amount: 90000.0},
-			{AllowanceType: "k-receipt", Amount: 40000.0},
-			{AllowanceType: "personal", Amount: 0.0},
-		}
-
-		expected := 90000.0 + 40000.0
-
-		got := calculateAllowance(allowances)
-
-		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
-	})
-
-	t.Run("test normal allowances", func(t *testing.T) {
-		// I'll be back to mock DB
-		config.ConnectDB()
-
-		allowances := []models.Allowance{
-			{AllowanceType: "donation", Amount: 90000.0},
-			{AllowanceType: "k-receipt", Amount: 40000.0},
-			{AllowanceType: "personal", Amount: 70000.0},
-		}
-
-		expected := 90000.0 + 40000.0 + 70000.0
-
-		got := calculateAllowance(allowances)
-
-		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
-	})
-
-	t.Run("non calculate personal allowance with less than 60000", func(t *testing.T) {
-		// I'll be back to mock DB
-		config.ConnectDB()
-
-		allowances := []models.Allowance{
-			{AllowanceType: "donation", Amount: 90000.0},
-			{AllowanceType: "k-receipt", Amount: 40000.0},
-			{AllowanceType: "personal", Amount: 50000.0},
-		}
-
-		expected := 90000.0 + 40000.0 + 0.0
-
-		got := calculateAllowance(allowances)
-
-		assert.Equal(t, expected, got, "total allowance got = %f but expected = %f", got, expected)
-	})
-
+			assert.Equal(t, tt.expected, got, "total allowance got = %f but expected = %f", got, tt.expected)
+		})
+	}
 }
 
 func TestCalculateTaxAmount(t *testing.T) {
