@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/KKGo-Software-engineering/assessment-tax/config"
-	"github.com/KKGo-Software-engineering/assessment-tax/handlers"
-	"github.com/KKGo-Software-engineering/assessment-tax/middleware"
 	"github.com/labstack/echo/v4"
+	"github.com/phetployst/K-Tax/config"
+	"github.com/phetployst/K-Tax/handlers"
+	"github.com/phetployst/K-Tax/middleware"
 )
 
 func main() {

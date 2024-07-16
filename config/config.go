@@ -1,14 +1,11 @@
 package config
 
 import (
-	"log"
 	"os"
-	"time"
 
-	"github.com/KKGo-Software-engineering/assessment-tax/models"
+	"github.com/phetployst/K-Tax/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -19,17 +16,17 @@ func ConnectDB() {
 		panic("DATABASE_URL environment variable not set")
 	}
 
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold: time.Second,
-			LogLevel:      logger.Info,
-			Colorful:      true,
-		},
-	)
+	// newLogger := logger.New(
+	// 	log.New(os.Stdout, "\r\n", log.LstdFlags),
+	// 	logger.Config{
+	// 		SlowThreshold: time.Second,
+	// 		LogLevel:      logger.Info,
+	// 		Colorful:      true,
+	// 	},
+	// )
 
 	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: newLogger,
+		// Logger: newLogger,
 	})
 	if err != nil {
 		panic("failed to connect to database")

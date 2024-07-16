@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/KKGo-Software-engineering/assessment-tax/config"
-	"github.com/KKGo-Software-engineering/assessment-tax/models"
 	"github.com/labstack/echo/v4"
+	"github.com/phetployst/K-Tax/config"
+	"github.com/phetployst/K-Tax/models"
 	"gorm.io/gorm"
 )
 
