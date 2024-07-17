@@ -200,3 +200,79 @@ func TestSetKReceiptDeduction(t *testing.T) {
 		assert.Equal(t, 50000.0, response["KReceipt"])
 	}
 }
+
+func TestCalculateTax(t *testing.T) {
+
+	t.Run("Case 1: should be return only tax value", func(t *testing.T) {
+		e := echo.New()
+
+		reqBody := map[string]interface{}{
+			"TotalIncome": 1000000.0,
+			"WHT":         1000.0,
+			"Allowances": []map[string]interface{}{
+				{
+					"AllowanceType": "personal",
+					"Amount":        60000.0,
+				},
+			},
+		}
+		request, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/tax/calculations", bytes.NewReader(request))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		if assert.NoError(t, CalculateTax(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+			var responseBody map[string]interface{}
+			json.Unmarshal(rec.Body.Bytes(), &responseBody)
+
+			tax, taxOk := responseBody["tax"].(float64)
+			taxRefund, refundOk := responseBody["taxRefund"].(float64)
+
+			assert.True(t, taxOk)
+			assert.Equal(t, 94000.0, tax)
+
+			assert.False(t, refundOk)
+			assert.Nil(t, nil, taxRefund)
+		}
+	})
+
+	t.Run("Case 2: should be return tax value = 0 and return value tax refund", func(t *testing.T) {
+		e := echo.New()
+
+		reqBody := map[string]interface{}{
+			"TotalIncome": 1000000.0,
+			"WHT":         350000.0,
+			"Allowances": []map[string]interface{}{
+				{
+					"AllowanceType": "personal",
+					"Amount":        60000.0,
+				},
+			},
+		}
+		request, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/tax/calculations", bytes.NewReader(request))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		if assert.NoError(t, CalculateTax(c)) {
+			assert.Equal(t, http.StatusOK, rec.Code)
+			var responseBody map[string]interface{}
+			json.Unmarshal(rec.Body.Bytes(), &responseBody)
+
+			tax, taxOk := responseBody["tax"].(float64)
+			taxRefund, refundOk := responseBody["taxRefund"].(float64)
+
+			assert.True(t, taxOk)
+			assert.Equal(t, 0.0, tax)
+
+			assert.True(t, refundOk)
+			assert.Equal(t, 255000.0, taxRefund)
+		}
+	})
+
+}
