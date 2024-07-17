@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/phetployst/K-Tax/config"
 	"github.com/phetployst/K-Tax/models"
 	"github.com/stretchr/testify/assert"
@@ -159,5 +164,22 @@ func TestCalculateTaxAmount(t *testing.T) {
 			assert.Equal(t, test.expectedTax, tax, "Tax should be equal %f but got %f", test.expectedTax, tax)
 			assert.Equal(t, test.expectedRefund, refund, "Refund should be equal %f but got %f", test.expectedRefund, refund)
 		})
+	}
+}
+
+func TestSetPersonalDeduction(t *testing.T) {
+	e := echo.New()
+	reqBody := `{"amount": 50000}`
+	req := httptest.NewRequest(http.MethodPost, "/admin/deductions/personal", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	if assert.NoError(t, SetPersonalDeduction(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		var response map[string]float64
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, 50000.0, response["personalDeduction"])
 	}
 }
