@@ -183,3 +183,20 @@ func TestSetPersonalDeduction(t *testing.T) {
 		assert.Equal(t, 50000.0, response["personalDeduction"])
 	}
 }
+
+func TestSetKReceiptDeduction(t *testing.T) {
+	e := echo.New()
+	reqBody := `{"amount": 50000}`
+	req := httptest.NewRequest(http.MethodPost, "/admin/deductions/kreceipt", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	if assert.NoError(t, SetKReceiptDeduction(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		var response map[string]float64
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, 50000.0, response["KReceipt"])
+	}
+}
